@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'models/note_adapter.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/task_manager_screen.dart';
 import 'screens/document_library_screen.dart';
 import 'screens/notes_screen.dart';
 
 
-void main() {
+void main() async {
+  await Hive.initFlutter();
+  Hive.registerAdapter(NoteAdapter());
   runApp(const MyApp());
 }
 
@@ -63,14 +67,17 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
+            backgroundColor: const Color.fromARGB(248, 164, 143, 189),
             icon: Icon(Icons.task),
             label: 'Tareas',
           ),
           BottomNavigationBarItem(
+            backgroundColor: const Color.fromARGB(248, 164, 143, 189),
             icon: Icon(Icons.library_books),
             label: 'Documentos',
           ),
           BottomNavigationBarItem(
+            backgroundColor: const Color.fromARGB(248, 164, 143, 189),
             icon: Icon(Icons.note),
             label: 'Notas',
           ),
