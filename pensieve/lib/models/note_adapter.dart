@@ -4,7 +4,7 @@ import 'note.dart';
 
 class NoteAdapter extends TypeAdapter<Note> {
   @override
-  final typeId = 0; // Assign a unique ID for the adapter
+  final typeId = 0;
 
   @override
   Note read(BinaryReader reader) {
@@ -17,27 +17,30 @@ class NoteAdapter extends TypeAdapter<Note> {
       content: fields[1] as String,
       backgroundColor: fields[2] as int,
       createdAt: fields[3] as DateTime,
-      fontSize: fields[4] == null ? 16.0 : fields[4] as double,
-      textColor: fields[5] == null ? Colors.black.value : fields[5] as int, // Provide default value for textColor
+      modifiedAt: fields[4] as DateTime?, // Read modifiedAt
+      fontSize: fields[5] == null ? 16.0 : fields[5] as double, // Read fontSize
+      textColor: fields[6] == null ? Colors.black.value : fields[6] as int, // Read textColor
     );
   }
 
   @override
   void write(BinaryWriter writer, Note obj) {
     writer
-      ..writeByte(6) 
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.content)
       ..writeByte(2)
-      ..write(obj.backgroundColor) 
+      ..write(obj.backgroundColor)
       ..writeByte(3)
       ..write(obj.createdAt)
       ..writeByte(4)
-      ..write(obj.fontSize)
+      ..write(obj.modifiedAt)
       ..writeByte(5)
-      ..write(obj.textColor); 
+      ..write(obj.fontSize)
+      ..writeByte(6)
+      ..write(obj.textColor);
   }
 
   @override

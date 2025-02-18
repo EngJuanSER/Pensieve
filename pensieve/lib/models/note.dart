@@ -4,7 +4,9 @@ class Note {
   int backgroundColor;
   DateTime createdAt;
   int textColor;
-  double fontSize; // Add font size
+  double fontSize; 
+  DateTime? modifiedAt;
+
 
   Note({
     required this.id,
@@ -12,6 +14,7 @@ class Note {
     required this.backgroundColor,
     required this.createdAt,
     required this.fontSize,
-    required this.textColor, // Add font size
+    required this.textColor,
+    this.modifiedAt, 
   });
 }

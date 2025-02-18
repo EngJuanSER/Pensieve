@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../models/note.dart';
+import '../components/note_card.dart';
+import '../components/note_list.dart';
 import 'dart:async';
 
 class NotesScreen extends StatefulWidget {
@@ -15,12 +17,32 @@ class NotesScreenState extends State<NotesScreen> {
   List<Note> notes = [];
   late Box<Note> _notesBox;
   String _searchText = '';
+  String _sortOrder = 'fecha_creacion';
+  bool _isListView = false;
+  int _crossAxisCount = 5;
 
   @override
   void initState() {
     super.initState();
+//   _clearAndOpenBox();
     _openBox();
+    Image.asset('assets/images/lines_pattern.jpg')
+          .image
+          .resolve(const ImageConfiguration())
+          .addListener(
+            ImageStreamListener((_, __) {
+              if (mounted) {
+                setState(() {});
+              }
+            }),
+          );
   }
+
+/*   Future<void> _clearAndOpenBox() async {
+    await Hive.deleteBoxFromDisk('notes');
+    _notesBox = await Hive.openBox<Note>('notes');
+    _loadNotes();
+  } */
 
   Future<void> _openBox() async {
     _notesBox = await Hive.openBox<Note>('notes');
@@ -53,23 +75,21 @@ class NotesScreenState extends State<NotesScreen> {
     if (noteIndex != -1) {
       final note = notes[noteIndex];
       note.content = content;
-      _notesBox.put(id, note); // Update in Hive
+      note.modifiedAt = DateTime.now(); 
+      _notesBox.put(id, note); 
     }
   }
 
   Future<void> _deleteNote(String id) async {
     try {
       final noteToDelete = notes.firstWhere((note) => note.id == id);
-      
-      // Eliminar de Hive
+
       await _notesBox.delete(noteToDelete.id);
-      
-      // Actualizar la lista local
+
       setState(() {
         notes = notes.where((note) => note.id != id).toList();
       });
-      
-      // Opcional: Mostrar confirmación
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -132,180 +152,147 @@ class NotesScreenState extends State<NotesScreen> {
     }
   }
 
+  List<Note> _getFilteredAndSortedNotes() {
+    List<Note> filteredNotes = _getFilteredNotes();
+
+    switch (_sortOrder) {
+      case 'fecha_creacion':
+        filteredNotes.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        break;
+      case 'fecha_modificacion':
+        filteredNotes.sort((a, b) => (b.modifiedAt ?? b.createdAt).compareTo(a.modifiedAt ?? a.createdAt));
+      break;
+      case 'alfabeticamente':
+        filteredNotes.sort((a, b) => a.content.toLowerCase().compareTo(b.content.toLowerCase()));
+        break;
+      default:
+        filteredNotes.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    }
+
+    return filteredNotes;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
-          Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: 'Buscar notas...',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              filled: true,
-              fillColor: Colors.grey[200],
-            ),
-            onChanged: (value) {
-              setState(() {
-                _searchText = value;
-              });
-            },
-          ),
-        ),
-        // Lista de notas filtradas
-          Expanded(
-            child: GridView.builder(
+            Padding(
               padding: const EdgeInsets.all(16.0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                crossAxisSpacing: 16.0,
-                mainAxisSpacing: 16.0,
-              ),
-              itemCount: _getFilteredNotes().length,
-              itemBuilder: (context, index) {
-                  final note = _getFilteredNotes()[index];
-                  String lastContent = note.content;
-                  Timer? saveTimer;
-                  final TextEditingController textController = TextEditingController(text: note.content);
-                
-                return Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        spreadRadius: 1,
-                        blurRadius: 5,
-                        offset: const Offset(0, 3),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Buscar notas...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[200],
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _searchText = value;
+                        });
+                      },
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.sort),
+                    onSelected: (String value) {
+                      setState(() {
+                        _sortOrder = value;
+                      });
+                    },
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: 'fecha_creacion',
+                        child: Text('Fecha de creación'),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'fecha_modificacion',
+                        child: Text('Fecha de modificación'),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'alfabeticamente',
+                        child: Text('Alfabéticamente'),
                       ),
                     ],
                   ),
-                  child: Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    color: Color(note.backgroundColor),
-                    child: Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: TextField(
-                            controller: textController,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              hintText: 'Escribe algo...',
-                            ),
-                              onChanged: (text) {
-                              if (text != lastContent) {
-                                lastContent = text;
-                                if (saveTimer?.isActive ?? false) {
-                                  saveTimer?.cancel();
-                                }
-                                saveTimer = Timer(const Duration(seconds: 1), () {
-                                  _updateNote(note.id, text);
-                                });
-                              }
-                            },                     
-                            maxLines: null,
-                            style: TextStyle(fontSize: note.fontSize, color: Color(note.textColor)),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 4,
-                          right: 4,
-                          child: Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.color_lens),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title: const Text('Selecciona un color'),
-                                        content: SingleChildScrollView(
-                                          child: ColorPicker(
-                                            pickerColor: Color(note.backgroundColor),
-                                            onColorChanged: (color) {
-                                              _changeColor(note.id, color);
-                                            },
-                                          ),
-                                        ),
-                                        actions: <Widget>[
-                                          ElevatedButton(
-                                            child: const Text('Cerrar'),
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.format_size),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return _FontSizeDialog(
-                                        initialFontSize: note.fontSize,
-                                        onFontSizeChanged: (fontSize) {
-                                          _changeFontSize(note.id, fontSize);
-                                        },
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.format_color_text),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title: const Text('Selecciona un color de texto'),
-                                        content: SingleChildScrollView(
-                                          child: ColorPicker(
-                                            pickerColor: Color(note.textColor),
-                                            onColorChanged: (color) {
-                                              _changeTextColor(note.id, color);
-                                            },
-                                          ),
-                                        ),
-                                        actions: <Widget>[
-                                          ElevatedButton(
-                                            child: const Text('Cerrar'),
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () => _showDeleteConfirmationDialog(context, note.id),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                  IconButton(
+                    icon: Icon(_isListView ? Icons.grid_view : Icons.list),
+                    onPressed: () {
+                      setState(() {
+                        _isListView = !_isListView;
+                      });
+                    },
                   ),
+                ],
+              ),
+            ),
+            if (!_isListView)
+              Slider(
+                value: _crossAxisCount.toDouble(),
+                min: 2,
+                max: 8,
+                divisions: 6,
+                label: 'Columnas: $_crossAxisCount',
+                onChanged: (value) {
+                  setState(() {
+                    _crossAxisCount = value.toInt();
+                  });
+                },
+              ),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1.0, 0.0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
                 );
               },
+              child: _isListView
+              ? ListView.builder(
+                padding: const EdgeInsets.all(16.0),
+                itemCount: _getFilteredAndSortedNotes().length,
+                itemBuilder: (context, index) {
+                  final note = _getFilteredAndSortedNotes()[index];
+                  return NoteListItem( // Use NoteListItem
+                    note: note,
+                    updateNote: _updateNote,
+                    changeColor: _changeColor,
+                    changeFontSize: _changeFontSize,
+                    changeTextColor: _changeTextColor,
+                    showDeleteConfirmationDialog: _showDeleteConfirmationDialog,
+                  );
+                },
+              )
+              : GridView.builder(
+                padding: const EdgeInsets.all(16.0),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: _crossAxisCount,
+                  crossAxisSpacing: 16.0,
+                  mainAxisSpacing: 16.0,
+                ),
+                itemCount: _getFilteredAndSortedNotes().length,
+                itemBuilder: (context, index) {
+                  final note = _getFilteredAndSortedNotes()[index];
+                  return NoteCard(
+                    note: note,
+                    updateNote: _updateNote,
+                    changeColor: _changeColor,
+                    changeFontSize: _changeFontSize,
+                    changeTextColor: _changeTextColor,
+                    showDeleteConfirmationDialog: _showDeleteConfirmationDialog,
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -388,68 +375,5 @@ class NotesScreenState extends State<NotesScreen> {
   void dispose() {
     Hive.close();
     super.dispose();
-  }
-}
-
-class _FontSizeDialog extends StatefulWidget {
-  final Function(double) onFontSizeChanged;
-  final double initialFontSize;
-
-  const _FontSizeDialog({
-    required this.onFontSizeChanged,
-    required this.initialFontSize,
-  });
-
-  @override
-  State<_FontSizeDialog> createState() => _FontSizeDialogState();
-}
-
-class _FontSizeDialogState extends State<_FontSizeDialog> {
-  late double currentFontSize;
-
-  @override
-  void initState() {
-    super.initState();
-    currentFontSize = widget.initialFontSize;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Ajustar tamaño de fuente'),
-      content: SizedBox(
-        height: 100,
-        child: Column(
-          children: [
-            Text('Tamaño actual: ${currentFontSize.toStringAsFixed(1)}'),
-            Slider(
-              value: currentFontSize,
-              min: 8.0,
-              max: 50.0,
-              divisions: 42,
-              label: currentFontSize.toStringAsFixed(1),
-              onChanged: (double value) {
-                setState(() {
-                  currentFontSize = value;
-                });
-              },
-            ),
-          ],
-        ),
-      ),
-      actions: <Widget>[
-        TextButton(
-          child: const Text('Cancelar'),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        ElevatedButton(
-          child: const Text('Aceptar'),
-          onPressed: () {
-            widget.onFontSizeChanged(currentFontSize);
-            Navigator.of(context).pop();
-          },
-        ),
-      ],
-    );
   }
 }
