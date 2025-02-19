@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../models/note.dart';
 import '../components/font_size.dart';
+import '../components/image_gallery.dart';
 import 'dart:async';
 
 class NoteListItem extends StatefulWidget {
@@ -88,9 +89,11 @@ class NoteListItemState extends State<NoteListItem> {
               children: [
                 TextField(
                   controller: textController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: InputBorder.none,
                     hintText: 'Escribe algo...',
+                    hintStyle: TextStyle(color: Color(widget.note.textColor)),
+
                   ),
                   onChanged: (text) {
                     if (text != lastContent) {
@@ -110,8 +113,16 @@ class NoteListItemState extends State<NoteListItem> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    ImageGallery(
+                      imageUrls: widget.note.imageUrls,
+                      onImageUrlsChanged: (newImageUrls) {
+                        final note = widget.note;
+                        note.imageUrls = newImageUrls;
+                        widget.updateNote(note.id, note.content); // Actualizar la nota en Hive
+                      },
+                    ),
                     IconButton(
-                      icon: const Icon(Icons.color_lens),
+                      icon: Icon(color: Color(widget.note.textColor), Icons.color_lens),
                       onPressed: () {
                         showDialog(
                           context: context,
@@ -140,7 +151,7 @@ class NoteListItemState extends State<NoteListItem> {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.format_size),
+                      icon: Icon(color: Color(widget.note.textColor), Icons.format_size),
                       onPressed: () {
                         showGeneralDialog(
                           context: context,
@@ -177,7 +188,7 @@ class NoteListItemState extends State<NoteListItem> {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.format_color_text),
+                      icon: Icon(color: Color(widget.note.textColor), Icons.format_color_text),
                       onPressed: () {
                         showDialog(
                           context: context,
@@ -206,7 +217,7 @@ class NoteListItemState extends State<NoteListItem> {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete),
+                      icon: Icon(color: Color(widget.note.textColor), Icons.delete),
                       onPressed: () => widget.showDeleteConfirmationDialog(context, widget.note.id),
                     ),
                   ],

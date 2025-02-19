@@ -70,12 +70,15 @@ class NotesScreenState extends State<NotesScreen> {
     });
   }
 
-  void _updateNote(String id, String content) {
+  void _updateNote(String id, String content, {List<String>? imageUrls}) {
     final noteIndex = notes.indexWhere((note) => note.id == id);
     if (noteIndex != -1) {
       final note = notes[noteIndex];
       note.content = content;
       note.modifiedAt = DateTime.now(); 
+      if (imageUrls != null) {
+      note.imageUrls = imageUrls;
+     }
       _notesBox.put(id, note); 
     }
   }
