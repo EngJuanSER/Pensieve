@@ -20,12 +20,16 @@ class NotesScreenState extends State<NotesScreen> {
   String _sortOrder = 'fecha_creacion';
   bool _isListView = false;
   int _crossAxisCount = 5;
+  bool _showOnlyFavorites = false;
+  String _selectedTag = '';
+  Set<String> _allTags = {};
 
   @override
   void initState() {
     super.initState();
 //   _clearAndOpenBox();
     _openBox();
+    _updateAllTags();
     Image.asset('assets/images/lines_pattern.jpg')
           .image
           .resolve(const ImageConfiguration())
@@ -43,6 +47,33 @@ class NotesScreenState extends State<NotesScreen> {
     _notesBox = await Hive.openBox<Note>('notes');
     _loadNotes();
   } */
+
+  void _toggleFavorite(String id) {
+    final noteIndex = notes.indexWhere((note) => note.id == id);
+    if (noteIndex != -1) {
+      final note = notes[noteIndex];
+      note.isFavorite = !note.isFavorite;
+      _notesBox.put(id, note);
+      setState(() {}); // Trigger rebuild
+    }
+  }
+
+  void _updateAllTags() {
+    _allTags = notes.fold<Set<String>>({}, (set, note) {
+      set.addAll(note.tags);
+      return set;
+    });
+  }
+
+  void _updateTags(String id, List<String> newTags) {
+    final noteIndex = notes.indexWhere((note) => note.id == id);
+    if (noteIndex != -1) {
+      final note = notes[noteIndex];
+      note.tags = newTags;
+      _notesBox.put(id, note);
+      setState(() {}); // Trigger rebuild
+    }
+  }
 
   Future<void> _openBox() async {
     _notesBox = await Hive.openBox<Note>('notes');
@@ -145,14 +176,26 @@ class NotesScreenState extends State<NotesScreen> {
   }
 
   List<Note> _getFilteredNotes() {
-    if (_searchText.isEmpty) {
-      return notes;
-    } else {
-      return notes
-          .where((note) =>
-              note.content.toLowerCase().contains(_searchText.toLowerCase()))
-          .toList();
+    List<Note> filteredNotes = notes;
+
+    if (_showOnlyFavorites) {
+      filteredNotes = filteredNotes.where((note) => note.isFavorite).toList();
     }
+
+    if (_selectedTag.isNotEmpty) {
+      filteredNotes = filteredNotes.where((note) => 
+        note.tags.contains(_selectedTag)
+      ).toList();
+    }
+
+    if (_searchText.isNotEmpty) {
+      filteredNotes = filteredNotes.where((note) =>
+        note.content.toLowerCase().contains(_searchText.toLowerCase()) ||
+        note.tags.any((tag) => tag.toLowerCase().contains(_searchText.toLowerCase()))
+      ).toList();
+    }
+
+    return filteredNotes;
   }
 
   List<Note> _getFilteredAndSortedNotes() {
@@ -178,6 +221,51 @@ class NotesScreenState extends State<NotesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Notas'),
+        actions: [
+          // Filtro de favoritos
+          IconButton(
+            icon: Icon(
+              _showOnlyFavorites ? Icons.star : Icons.star_border,
+              color: _showOnlyFavorites ? Colors.amber : null,
+            ),
+            onPressed: () {
+              setState(() {
+                _showOnlyFavorites = !_showOnlyFavorites;
+              });
+            },
+          ),
+          // Menú de etiquetas
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.label),
+            onSelected: (String tag) {
+              setState(() {
+                _selectedTag = tag == _selectedTag ? '' : tag;
+              });
+            },
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem<String>(
+                value: '',
+                child: Text('Todas las notas'),
+              ),
+              ..._allTags.map((tag) => PopupMenuItem<String>(
+                value: tag,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.label,
+                      color: _selectedTag == tag ? Colors.blue : null,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(tag),
+                  ],
+                ),
+              )),
+            ],
+          ),
+        ],
+      ),
       body: Column(
         children: [
             Padding(
@@ -266,13 +354,15 @@ class NotesScreenState extends State<NotesScreen> {
                 itemCount: _getFilteredAndSortedNotes().length,
                 itemBuilder: (context, index) {
                   final note = _getFilteredAndSortedNotes()[index];
-                  return NoteListItem( // Use NoteListItem
+                  return NoteListItem( 
                     note: note,
                     updateNote: _updateNote,
                     changeColor: _changeColor,
                     changeFontSize: _changeFontSize,
                     changeTextColor: _changeTextColor,
                     showDeleteConfirmationDialog: _showDeleteConfirmationDialog,
+                    toggleFavorite: _toggleFavorite,
+                    updateTags: _updateTags,
                   );
                 },
               )
@@ -293,6 +383,9 @@ class NotesScreenState extends State<NotesScreen> {
                     changeFontSize: _changeFontSize,
                     changeTextColor: _changeTextColor,
                     showDeleteConfirmationDialog: _showDeleteConfirmationDialog,
+                    toggleFavorite: _toggleFavorite, 
+                    updateTags: _updateTags,
+
                   );
                 },
               ),

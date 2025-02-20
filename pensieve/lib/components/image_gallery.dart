@@ -87,137 +87,116 @@ class ImageGalleryState extends State<ImageGallery> {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(color: widget.iconColor, Icons.image),
-      onPressed: () {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return StatefulBuilder(
-              builder: (BuildContext context, StateSetter dialogSetState) {
-                return Dialog(
-                  child: Container(
-                    width: MediaQuery.of(context).size.width * 0.8,
-                    height: MediaQuery.of(context).size.height * 0.8,
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        // Header
-                        Row(
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.8,
+      height: MediaQuery.of(context).size.height * 0.8,
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          // Header
+          Row(
+            children: [
+              const Text(
+                'Galería de Imágenes',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: () async {
+                  await pickImage();
+                  setState(() {});
+                },
+                icon: const Icon(Icons.add_photo_alternate),
+                label: const Text('Agregar Imagen'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Content
+          Expanded(
+            child: DropTarget(
+              onDragDone: (details) async {
+                for (final file in details.files) {
+                  final extension = path.extension(file.path).toLowerCase();
+                  if (['.jpg', '.jpeg', '.png', '.gif'].contains(extension)) {
+                    imageSizes[file.path] = await _getImageDimensions(file.path);
+                    setState(() {
+                      imageUrls.add(file.path);
+                      widget.onImageUrlsChanged(imageUrls);
+                      isDragging = false;
+                    });
+                  }
+                }
+              },
+              onDragEntered: (details) => setState(() => isDragging = true),
+              onDragExited: (details) => setState(() => isDragging = false),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isDragging ? Colors.blue : Colors.grey.withOpacity(0.3),
+                    width: isDragging ? 2 : 1,
+                    style: BorderStyle.none,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Stack(
+                  children: [
+                    if (imageUrls.isEmpty)
+                      const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
-                              'Galería de Imágenes',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Spacer(),
-                            TextButton.icon(
-                              onPressed: () async {
-                                await pickImage();
-                                dialogSetState(() {});
-                              },
-                              icon: const Icon(Icons.add_photo_alternate),
-                              label: const Text('Agregar Imagen'),
-                            ),
-                            const SizedBox(width: 8),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Cerrar'),
-                            ),
+                            Icon(Icons.cloud_upload, size: 48),
+                            SizedBox(height: 8),
+                            Text('Arrastra imágenes aquí'),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        // Content
-                        Expanded(
-                          child: DropTarget(
-                            onDragDone: (details) async {
-                              for (final file in details.files) {
-                                final extension = path.extension(file.path).toLowerCase();
-                                if (['.jpg', '.jpeg', '.png', '.gif'].contains(extension)) {
-                                  imageSizes[file.path] = await _getImageDimensions(file.path);
-                                  dialogSetState(() {
-                                    imageUrls.add(file.path);
+                      )
+                    else
+                      MasonryGridView.count(
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: imageUrls.length,
+                        itemBuilder: (context, index) {
+                          final url = imageUrls[index];
+                          return imageSizes.containsKey(url)
+                            ? ImageGridItem(
+                                imagePath: url,
+                                index: index,
+                                onTap: _showFullScreenImage,
+                                onDelete: (idx) {
+                                  setState(() {
+                                    imageUrls.removeAt(idx);
                                     widget.onImageUrlsChanged(imageUrls);
-                                    isDragging = false;
                                   });
-                                }
-                              }
-                            },
-                            onDragEntered: (details) => dialogSetState(() => isDragging = true),
-                            onDragExited: (details) => dialogSetState(() => isDragging = false),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: isDragging ? Colors.blue : Colors.grey.withOpacity(0.3),
-                                  width: isDragging ? 2 : 1,
-                                  style: BorderStyle.none,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Stack(
-                                children: [
-                                  if (imageUrls.isEmpty)
-                                    const Center(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.cloud_upload, size: 48),
-                                          SizedBox(height: 8),
-                                          Text('Arrastra imágenes aquí'),
-                                        ],
-                                      ),
-                                    )
-                                  else
-                                    MasonryGridView.count(
-                                      crossAxisCount: 3,
-                                      mainAxisSpacing: 16,
-                                      crossAxisSpacing: 16,
-                                      padding: const EdgeInsets.all(16),
-                                      itemCount: imageUrls.length,
-                                      itemBuilder: (context, index) {
-                                        final url = imageUrls[index];
-                                        return imageSizes.containsKey(url)
-                                          ? ImageGridItem(
-                                              imagePath: url,
-                                              index: index,
-                                              onTap: _showFullScreenImage,
-                                              onDelete: (idx) {
-                                                dialogSetState(() {
-                                                  imageUrls.removeAt(idx);
-                                                  widget.onImageUrlsChanged(imageUrls);
-                                                });
-                                              },
-                                              imageSize: imageSizes[url]!,
-                                            )
-                                          : const SizedBox(
-                                              height: 100,
-                                              child: Center(child: CircularProgressIndicator()),
-                                            );
-                                      },
-                                    ),
-                                  if (isDragging)
-                                    Container(
-                                      color: Colors.blue.withOpacity(0.1),
-                                      child: const Center(
-                                        child: Icon(Icons.cloud_upload, size: 64, color: Colors.blue),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
+                                },
+                                imageSize: imageSizes[url]!,
+                              )
+                            : const SizedBox(
+                                height: 100,
+                                child: Center(child: CircularProgressIndicator()),
+                              );
+                        },
+                      ),
+                    if (isDragging)
+                      Container(
+                        color: Colors.blue.withOpacity(0.1),
+                        child: const Center(
+                          child: Icon(Icons.cloud_upload, size: 64, color: Colors.blue),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

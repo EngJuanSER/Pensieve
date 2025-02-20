@@ -22,72 +22,66 @@ class ImageGridItem extends StatelessWidget {
     const double minWidth = 100.0;
     const double maxWidth = 300.0;
 
-    // Obtener dimensiones originales
-    double aspectRatio = imageSize.width / imageSize.height;
-    double finalWidth;
-    double finalHeight;
+  double originalWidth = imageSize.width;
+  double originalHeight = imageSize.height;
+  double scaleFactor = 1.0;
 
-    // Calcular dimensiones finales basadas en el ancho
-    if (imageSize.width < minWidth) {
-      // Si el ancho es menor al mínimo, escalamos hasta alcanzar el mínimo
-      finalWidth = minWidth;
-      finalHeight = minWidth / aspectRatio;
-    } else if (imageSize.width > maxWidth) {
-      // Si el ancho es mayor al máximo, escalamos hasta alcanzar el máximo
-      finalWidth = maxWidth;
-      finalHeight = maxWidth / aspectRatio;
-    } else {
-      // Si está dentro del rango, mantenemos las dimensiones originales
-      finalWidth = imageSize.width;
-      finalHeight = imageSize.height;
-    }
+  if (originalWidth < minWidth) {
+    scaleFactor = minWidth / originalWidth;
+  } else if (originalWidth > maxWidth) {
+    scaleFactor = maxWidth / originalWidth;
+  }
 
-    return Container(
+  double finalWidth = originalWidth * scaleFactor;
+  double finalHeight = originalHeight * scaleFactor;
+
+    return SizedBox(
       key: ValueKey(imagePath),
+      width: finalWidth, 
+      height: finalHeight, 
       child: InkWell(
         onTap: () => onTap(imagePath),
-        child: SizedBox(
-          width: finalWidth,
-          height: finalHeight,
-          child: Stack(
-            children: [
-              Container(
+        child: Stack(
+          fit: StackFit.expand, 
+          children: [
+            Container(
+              width: finalWidth,
+              height: finalHeight,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.grey.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  File(imagePath),
+                  width: finalWidth,
+                  height: finalHeight,
+                  fit: BoxFit.fill, 
+                ),
+              ),
+            ),
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.grey.withOpacity(0.2),
-                    width: 1,
-                  ),
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.file(
-                    File(imagePath),
-                    width: finalWidth,
-                    height: finalHeight,
-                    fit: BoxFit.contain,
-                  ),
+                child: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.white, size: 20),
+                  onPressed: () => onDelete(index),
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(),
+                  iconSize: 20,
                 ),
               ),
-              Positioned(
-                top: 4,
-                right: 4,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.white, size: 20),
-                    onPressed: () => onDelete(index),
-                    padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(),
-                    iconSize: 20,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -21,13 +21,16 @@ class NoteAdapter extends TypeAdapter<Note> {
       fontSize: fields[5] == null ? 16.0 : fields[5] as double, 
       textColor: fields[6] == null ? Colors.black.value : fields[6] as int, 
       imageUrls: fields[7] == null ? [] : List<String>.from(fields[7] as List), 
+      isFavorite: fields[8] == null ? false : fields[8] as bool,
+      tags: fields[9] == null ? [] : List<String>.from(fields[9] as List),
+  
     );
   }
 
   @override
   void write(BinaryWriter writer, Note obj) {
-    writer
-      ..writeByte(8)
+      writer
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -43,7 +46,11 @@ class NoteAdapter extends TypeAdapter<Note> {
       ..writeByte(6)
       ..write(obj.textColor)
       ..writeByte(7)
-      ..write(obj.imageUrls);
+      ..write(obj.imageUrls)
+      ..writeByte(8)
+      ..write(obj.isFavorite)
+      ..writeByte(9)
+      ..write(obj.tags);
   }
 
   @override

@@ -7,6 +7,8 @@ class Note {
   int textColor;
   double fontSize; 
   List<String> imageUrls;
+  bool isFavorite;
+  List<String> tags;
 
   Note({
     required this.id,
@@ -17,5 +19,7 @@ class Note {
     required this.fontSize,
     required this.textColor,
     this.imageUrls = const [],
+    this.isFavorite = false,
+    this.tags = const [],
   });
 }
