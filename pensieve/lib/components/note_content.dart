@@ -32,6 +32,15 @@ class _NoteContentState extends State<NoteContent> {
   }
 
   @override
+  void didUpdateWidget(NoteContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.content != widget.content) {
+      textController.text = widget.content;
+      lastContent = widget.content;
+    }
+  }
+  
+  @override
   void dispose() {
     textController.dispose();
     saveTimer?.cancel();

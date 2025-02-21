@@ -148,7 +148,11 @@ class NoteCardState extends State<NoteCard> {
         content: SingleChildScrollView(
           child: ColorPicker(
             pickerColor: Color(widget.note.textColor),
-            onColorChanged: (color) => widget.changeTextColor(widget.note.id, color),
+            onColorChanged: (color) {
+              setState(() {
+                widget.changeTextColor(widget.note.id, color);
+              });
+            },          
           ),
         ),
         actions: [

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../models/note.dart';
-import '../components/font_size.dart';
-import '../components/image_gallery.dart';
-import 'dart:async';
-import 'dart:io';
-import 'dart:math' as math;
+import 'note_list_header.dart';
+import 'note_content.dart';
+import 'image_preview.dart';
+import 'tag_list.dart';
+import 'font_size.dart';
+import 'tag_manager.dart';
+import 'image_gallery.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class NoteListItem extends StatefulWidget {
   final Note note;
@@ -34,33 +36,6 @@ class NoteListItem extends StatefulWidget {
 }
 
 class NoteListItemState extends State<NoteListItem> {
-  String lastContent = '';
-  Timer? saveTimer;
-  late TextEditingController textController;
-
-  @override
-  void initState() {
-    super.initState();
-    textController = TextEditingController(text: widget.note.content);
-    lastContent = widget.note.content;
-  }
-
-  @override
-  void didUpdateWidget(covariant NoteListItem oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.note.content != oldWidget.note.content) {
-      textController.text = widget.note.content;
-      lastContent = widget.note.content;
-    }
-  }
-
-  @override
-  void dispose() {
-    textController.dispose();
-    saveTimer?.cancel();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -91,147 +66,47 @@ class NoteListItemState extends State<NoteListItem> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12.0, 4.0, 4.0, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      widget.note.createdAt.toString().split('.')[0],
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(widget.note.textColor).withOpacity(0.6),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        widget.note.isFavorite ? Icons.star : Icons.star_border,
-                        color: Color(widget.note.textColor),
-                      ),
-                      onPressed: () => widget.toggleFavorite(widget.note.id),
-                    ),
-                  ],
-                ),
+              // Header
+              NoteListHeader(
+                createdAt: widget.note.createdAt,
+                isFavorite: widget.note.isFavorite,
+                textColor: Color(widget.note.textColor),
+                backgroundColor: Color(widget.note.backgroundColor),
+                onFavoriteToggle: () => widget.toggleFavorite(widget.note.id),
+                onColorSelect: () => _showColorPicker(context),
+                onTextColorSelect: () => _showTextColorPicker(context),
+                onFontSizeSelect: () => _showFontSizeDialog(context),
+                onTagsSelect: () => _showTagManager(context),
+                onImagesSelect: () => _showImageGallery(context),
+                onDeleteSelect: () => widget.showDeleteConfirmationDialog(context, widget.note.id),
               ),
 
+              // Contenido principal
               Padding(
                 padding: const EdgeInsets.all(12.0),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextField(
-                        controller: textController,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          hintText: 'Escribe algo...',
-                          hintStyle: TextStyle(color: Color(widget.note.textColor)),
-                        ),
-                        onChanged: (text) {
-                          if (text != lastContent) {
-                            lastContent = text;
-                            if (saveTimer?.isActive ?? false) {
-                              saveTimer?.cancel();
-                            }
-                            saveTimer = Timer(const Duration(seconds: 1), () {
-                              widget.updateNote(widget.note.id, text);
-                            });
-                          }
-                        },
-                        maxLines: null,
-                        style: TextStyle(
-                          fontSize: widget.note.fontSize,
-                          color: Color(widget.note.textColor),
-                        ),
-                      ),
-                      
-                      if (widget.note.imageUrls.isNotEmpty)
-                        ValueListenableBuilder<List<String>>(
-                          valueListenable: ValueNotifier<List<String>>(widget.note.imageUrls),
-                          builder: (context, imageUrls, _) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Row(
-                                children: [
-                                  for (var i = 0; i < math.min(2, imageUrls.length); i++)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8.0),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: Image.file(
-                                          File(imageUrls[i]),
-                                          width: 40,
-                                          height: 40,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                  if (imageUrls.length > 2)
-                                    Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: Colors.black54,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '+${imageUrls.length - 2}',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-
-              Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: Color(widget.note.textColor).withOpacity(0.1),
-                    ),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ImageGallery(
-                      iconColor: Color(widget.note.textColor),
-                      imageUrls: widget.note.imageUrls,
-                      onImageUrlsChanged: (newImageUrls) {
-                        setState(() {
-                          widget.note.imageUrls = newImageUrls;
-                          widget.updateNote(widget.note.id, widget.note.content);
-                        });
-                      },
+                    // Contenido de la nota
+                    NoteContent(
+                      content: widget.note.content,
+                      textColor: Color(widget.note.textColor),
+                      fontSize: widget.note.fontSize,
+                      onContentChanged: (text) => 
+                        widget.updateNote(widget.note.id, text),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.color_lens, color: Color(widget.note.textColor)),
-                      onPressed: () => _showColorPicker(context),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.format_size, color: Color(widget.note.textColor)),
-                      onPressed: () => _showFontSizeDialog(context),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.format_color_text, color: Color(widget.note.textColor)),
-                      onPressed: () => _showTextColorPicker(context),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete, color: Color(widget.note.textColor)),
-                      onPressed: () => widget.showDeleteConfirmationDialog(context, widget.note.id),
-                    ),
+
+                    // Lista de etiquetas
+                    if (widget.note.tags.isNotEmpty)
+                      TagList(
+                        tags: widget.note.tags,
+                        textColor: Color(widget.note.textColor),
+                        backgroundColor: Color(widget.note.backgroundColor),
+                      ),
+                    
+                    // Vista previa de imágenes
+                    if (widget.note.imageUrls.isNotEmpty)
+                      ImagePreview(imageUrls: widget.note.imageUrls),
                   ],
                 ),
               ),
@@ -245,67 +120,101 @@ class NoteListItemState extends State<NoteListItem> {
   void _showColorPicker(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Selecciona un color'),
-          content: SingleChildScrollView(
-            child: ColorPicker(
-              pickerColor: Color(widget.note.backgroundColor),
-              onColorChanged: (color) => widget.changeColor(widget.note.id, color),
-            ),
+      builder: (context) => AlertDialog(
+        title: const Text('Selecciona un color'),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: Color(widget.note.backgroundColor),
+            onColorChanged: (color) => widget.changeColor(widget.note.id, color),
           ),
-          actions: [
-            TextButton(
-              child: const Text('Cerrar'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cerrar'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
     );
   }
 
   void _showTextColorPicker(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Selecciona un color de texto'),
-          content: SingleChildScrollView(
-            child: ColorPicker(
-              pickerColor: Color(widget.note.textColor),
-              onColorChanged: (color) => widget.changeTextColor(widget.note.id, color),
-            ),
+      builder: (context) => AlertDialog(
+        title: const Text('Selecciona un color de texto'),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: Color(widget.note.textColor),
+            onColorChanged: (color) {
+              setState(() {
+                widget.changeTextColor(widget.note.id, color);
+              });
+            },          
           ),
-          actions: [
-            TextButton(
-              child: const Text('Cerrar'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cerrar'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
     );
   }
 
   void _showFontSizeDialog(BuildContext context) {
-    showGeneralDialog(
+    showDialog(
       context: context,
-      barrierLabel: "Ajustar tamaño de fuente",
-      barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.5),
-      transitionDuration: const Duration(milliseconds: 200),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 350, maxHeight: 400),
-            child: FontSizeDialog(
-              initialFontSize: widget.note.fontSize,
-              onFontSizeChanged: (fontSize) => widget.changeFontSize(widget.note.id, fontSize),
-            ),
+      builder: (context) => FontSizeDialog(
+        initialFontSize: widget.note.fontSize,
+        onFontSizeChanged: (fontSize) => widget.changeFontSize(widget.note.id, fontSize),
+      ),
+    );
+  }
+
+  void _showTagManager(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Gestionar etiquetas'),
+        content: TagManager(
+          tags: widget.note.tags,
+          onTagsChanged: (newTags) => widget.updateTags(widget.note.id, newTags),
+          iconColor: Color(widget.note.textColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cerrar'),
           ),
-        );
-      },
+        ],
+      ),
+    );
+  }
+
+  void _showImageGallery(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        contentPadding: EdgeInsets.zero,
+        content: ImageGallery(
+          imageUrls: widget.note.imageUrls,
+          onImageUrlsChanged: (newUrls) {
+            setState(() {
+              widget.note.imageUrls = newUrls;
+              widget.updateNote(widget.note.id, widget.note.content);
+            });
+          },
+          iconColor: Color(widget.note.textColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
     );
   }
 }
