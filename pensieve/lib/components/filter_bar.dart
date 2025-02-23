@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class FilterBar extends StatefulWidget {
   final TextEditingController searchController;
+  final FocusNode searchFocusNode;
   final List<String> selectedTags;
   final List<String> availableTags;
   final bool showOnlyFavorites;
@@ -19,6 +20,7 @@ class FilterBar extends StatefulWidget {
   const FilterBar({
     super.key,
     required this.searchController,
+    required this.searchFocusNode,
     required this.selectedTags,
     required this.availableTags,
     required this.showOnlyFavorites,
@@ -47,12 +49,12 @@ class _FilterBarState extends State<FilterBar> {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          // Barra de búsqueda con botón de filtros avanzados
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: widget.searchController,
+                  focusNode: widget.searchFocusNode,
                   decoration: InputDecoration(
                     hintText: 'Buscar notas...',
                     prefixIcon: const Icon(Icons.search),
@@ -78,15 +80,12 @@ class _FilterBarState extends State<FilterBar> {
             ],
           ),
 
-          // Filtros avanzados
           if (_showAdvancedFilters) ...[
             const SizedBox(height: 8),
-            // Filtros rápidos
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  // Filtro de favoritos
                   FilterChip(
                     selected: widget.showOnlyFavorites,
                     label: const Text('Favoritos'),
@@ -94,7 +93,6 @@ class _FilterBarState extends State<FilterBar> {
                     avatar: const Icon(Icons.star),
                   ),
                   const SizedBox(width: 8),
-                  // Selector de fecha inicial
                   ActionChip(
                     label: Text(
                       widget.startDate?.toString().split(' ')[0] ?? 'Fecha inicial',
@@ -103,7 +101,6 @@ class _FilterBarState extends State<FilterBar> {
                     avatar: const Icon(Icons.calendar_today),
                   ),
                   const SizedBox(width: 8),
-                  // Selector de fecha final
                   ActionChip(
                     label: Text(
                       widget.endDate?.toString().split(' ')[0] ?? 'Fecha final',
@@ -112,7 +109,6 @@ class _FilterBarState extends State<FilterBar> {
                     avatar: const Icon(Icons.calendar_today),
                   ),
                   const SizedBox(width: 8),
-                  // Menú de ordenamiento
                   PopupMenuButton<String>(
                     child: Chip(
                       label: Row(
@@ -138,7 +134,6 @@ class _FilterBarState extends State<FilterBar> {
               ),
             ),
             const SizedBox(height: 8),
-            // Filtros de tags
             Wrap(
               spacing: 8,
               children: widget.availableTags.map((tag) => FilterChip(

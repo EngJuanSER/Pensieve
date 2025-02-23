@@ -18,6 +18,9 @@ class NoteListItem extends StatefulWidget {
   final Function(BuildContext, String) showDeleteConfirmationDialog;
   final Function(String) toggleFavorite;
   final Function(String, List<String>) updateTags;
+  final GlobalKey<NoteListHeaderState>? headerKey;
+  final Function(bool)? onFocusChanged;
+
 
   const NoteListItem({
     super.key,
@@ -29,6 +32,8 @@ class NoteListItem extends StatefulWidget {
     required this.showDeleteConfirmationDialog,
     required this.toggleFavorite,
     required this.updateTags,
+    required this.onFocusChanged,
+    this.headerKey,
   });
 
   @override
@@ -68,6 +73,7 @@ class NoteListItemState extends State<NoteListItem> {
             children: [
               // Header
               NoteListHeader(
+                key: widget.headerKey,
                 createdAt: widget.note.createdAt,
                 isFavorite: widget.note.isFavorite,
                 textColor: Color(widget.note.textColor),
@@ -81,22 +87,20 @@ class NoteListItemState extends State<NoteListItem> {
                 onDeleteSelect: () => widget.showDeleteConfirmationDialog(context, widget.note.id),
               ),
 
-              // Contenido principal
               Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Contenido de la nota
                     NoteContent(
                       content: widget.note.content,
                       textColor: Color(widget.note.textColor),
                       fontSize: widget.note.fontSize,
                       onContentChanged: (text) => 
                         widget.updateNote(widget.note.id, text),
+                      onFocusChanged: widget.onFocusChanged,
                     ),
 
-                    // Lista de etiquetas
                     if (widget.note.tags.isNotEmpty)
                       TagList(
                         tags: widget.note.tags,
@@ -104,7 +108,6 @@ class NoteListItemState extends State<NoteListItem> {
                         backgroundColor: Color(widget.note.backgroundColor),
                       ),
                     
-                    // Vista previa de imágenes
                     if (widget.note.imageUrls.isNotEmpty)
                       ImagePreview(imageUrls: widget.note.imageUrls),
                   ],

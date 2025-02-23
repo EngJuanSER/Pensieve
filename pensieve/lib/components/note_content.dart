@@ -6,6 +6,7 @@ class NoteContent extends StatefulWidget {
   final Color textColor;
   final double fontSize;
   final Function(String) onContentChanged;
+  final Function(bool)? onFocusChanged;
 
   const NoteContent({
     super.key,
@@ -13,6 +14,7 @@ class NoteContent extends StatefulWidget {
     required this.textColor,
     required this.fontSize,
     required this.onContentChanged,
+    this.onFocusChanged,
   });
 
   @override
@@ -21,6 +23,7 @@ class NoteContent extends StatefulWidget {
 
 class _NoteContentState extends State<NoteContent> {
   late TextEditingController textController;
+  final FocusNode _focusNode = FocusNode();
   String lastContent = '';
   Timer? saveTimer;
 
@@ -29,6 +32,13 @@ class _NoteContentState extends State<NoteContent> {
     super.initState();
     textController = TextEditingController(text: widget.content);
     lastContent = widget.content;
+    _focusNode.addListener(_onFocusChanged);
+  }
+
+  void _onFocusChanged() {
+    if (widget.onFocusChanged != null) {
+      widget.onFocusChanged!(_focusNode.hasFocus);
+    }
   }
 
   @override
@@ -42,6 +52,8 @@ class _NoteContentState extends State<NoteContent> {
   
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChanged);
+    _focusNode.dispose();
     textController.dispose();
     saveTimer?.cancel();
     super.dispose();
@@ -51,6 +63,7 @@ class _NoteContentState extends State<NoteContent> {
   Widget build(BuildContext context) {
     return TextField(
       controller: textController,
+      focusNode: _focusNode,
       decoration: InputDecoration(
         border: InputBorder.none,
         hintText: 'Escribe algo...',
@@ -62,7 +75,7 @@ class _NoteContentState extends State<NoteContent> {
           if (saveTimer?.isActive ?? false) {
             saveTimer?.cancel();
           }
-          saveTimer = Timer(const Duration(seconds: 1), () {
+          saveTimer = Timer(const Duration(milliseconds: 500), () {
             widget.onContentChanged(text);
           });
         }

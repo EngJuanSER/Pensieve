@@ -18,6 +18,8 @@ class NoteCard extends StatefulWidget {
   final Function(BuildContext, String) showDeleteConfirmationDialog;
   final Function(String) toggleFavorite;
   final Function(String, List<String>) updateTags;
+  final GlobalKey<NoteHeaderState>? headerKey;
+  final Function(bool)? onFocusChanged;
 
   const NoteCard({
     super.key,
@@ -29,6 +31,8 @@ class NoteCard extends StatefulWidget {
     required this.showDeleteConfirmationDialog,
     required this.toggleFavorite,
     required this.updateTags,
+    required this.onFocusChanged,
+    this.headerKey,
   });
 
   @override
@@ -64,8 +68,8 @@ class NoteCardState extends State<NoteCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             NoteHeader(
+              key: widget.headerKey,
               createdAt: widget.note.createdAt,
               isFavorite: widget.note.isFavorite,
               textColor: Color(widget.note.textColor),
@@ -79,7 +83,6 @@ class NoteCardState extends State<NoteCard> {
               onDeleteSelect: () => widget.showDeleteConfirmationDialog(context, widget.note.id),
             ),
 
-            // Área de contenido principal
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -87,16 +90,16 @@ class NoteCardState extends State<NoteCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Contenido de la nota
                       NoteContent(
                         content: widget.note.content,
                         textColor: Color(widget.note.textColor),
                         fontSize: widget.note.fontSize,
                         onContentChanged: (text) => 
                           widget.updateNote(widget.note.id, text),
+                        onFocusChanged: widget.onFocusChanged,
+
                       ),
 
-                      // Lista de etiquetas
                       if (widget.note.tags.isNotEmpty)
                         TagList(
                           tags: widget.note.tags,
@@ -104,7 +107,6 @@ class NoteCardState extends State<NoteCard> {
                           backgroundColor: Color(widget.note.backgroundColor),
                         ),
                       
-                      // Vista previa de imágenes
                       if (widget.note.imageUrls.isNotEmpty)
                         ImagePreview(imageUrls: widget.note.imageUrls),
                     ],
@@ -118,7 +120,6 @@ class NoteCardState extends State<NoteCard> {
     );
   }
 
-  // Métodos para mostrar diálogos
   void _showColorPicker(BuildContext context) {
     showDialog(
       context: context,

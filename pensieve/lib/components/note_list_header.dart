@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'note_options_menu.dart';
 
-class NoteListHeader extends StatelessWidget {
+class NoteListHeader extends StatefulWidget {
   final DateTime createdAt;
   final bool isFavorite;
   final Color textColor;
@@ -30,6 +30,17 @@ class NoteListHeader extends StatelessWidget {
   });
 
   @override
+  State<NoteListHeader> createState() => NoteListHeaderState();
+}
+
+class NoteListHeaderState extends State<NoteListHeader> {
+  final GlobalKey<NoteOptionsMenuState> _menuKey = GlobalKey();
+
+  void showOptionsMenu() {
+    _menuKey.currentState?.showOptionsMenu();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12.0, 4.0, 4.0, 0),
@@ -37,30 +48,31 @@ class NoteListHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            createdAt.toString().split('.')[0],
+            widget.createdAt.toString().split('.')[0],
             style: TextStyle(
               fontSize: 12,
-              color: textColor.withOpacity(0.6),
+              color: widget.textColor.withOpacity(0.6),
             ),
           ),
           Row(
             children: [
               IconButton(
                 icon: Icon(
-                  isFavorite ? Icons.star : Icons.star_border,
-                  color: textColor,
+                  widget.isFavorite ? Icons.star : Icons.star_border,
+                  color: widget.textColor,
                 ),
-                onPressed: onFavoriteToggle,
+                onPressed: widget.onFavoriteToggle,
               ),
               NoteOptionsMenu(
-                iconColor: textColor,
-                backgroundColor: backgroundColor,
-                onColorSelect: onColorSelect,
-                onTextColorSelect: onTextColorSelect,
-                onFontSizeSelect: onFontSizeSelect,
-                onTagsSelect: onTagsSelect,
-                onImagesSelect: onImagesSelect,
-                onDeleteSelect: onDeleteSelect,
+                key: _menuKey,
+                iconColor: widget.textColor,
+                backgroundColor: widget.backgroundColor,
+                onColorSelect: widget.onColorSelect,
+                onTextColorSelect: widget.onTextColorSelect,
+                onFontSizeSelect: widget.onFontSizeSelect,
+                onTagsSelect: widget.onTagsSelect,
+                onImagesSelect: widget.onImagesSelect,
+                onDeleteSelect: widget.onDeleteSelect,
               ),
             ],
           ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class NoteOptionsMenu extends StatelessWidget {
+class NoteOptionsMenu extends StatefulWidget {
   final Color iconColor;
   final Color backgroundColor;
   final Function() onColorSelect;
@@ -23,6 +23,17 @@ class NoteOptionsMenu extends StatelessWidget {
   });
 
   @override
+  State<NoteOptionsMenu> createState() => NoteOptionsMenuState();
+}
+
+class NoteOptionsMenuState extends State<NoteOptionsMenu> {
+  final GlobalKey<PopupMenuButtonState<String>> _popupKey = GlobalKey();
+
+  void showOptionsMenu() {
+    _popupKey.currentState?.showButtonMenu();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Theme(
       data: Theme.of(context).copyWith(
@@ -35,13 +46,14 @@ class NoteOptionsMenu extends StatelessWidget {
         ),
       ),
       child: PopupMenuButton<String>(
-        icon: Icon(Icons.more_vert, color: iconColor),
+        key: _popupKey,
+        icon: Icon(Icons.more_vert, color: widget.iconColor),
         offset: const Offset(0, 40),
         elevation: 0,
         itemBuilder: (context) => [
           PopupMenuItem(
             padding: EdgeInsets.zero,
-            child: StatefulBuilder( // Agregamos StatefulBuilder aquí
+            child: StatefulBuilder(
               builder: (context, setState) => Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12.0),
@@ -49,7 +61,7 @@ class NoteOptionsMenu extends StatelessWidget {
                     image: const AssetImage('assets/images/lines_pattern.jpg'),
                     fit: BoxFit.cover,
                     colorFilter: ColorFilter.mode(
-                      backgroundColor.withOpacity(0.5),
+                      widget.backgroundColor.withOpacity(0.5),
                       BlendMode.multiply,
                     ),
                   ),
@@ -85,9 +97,9 @@ class NoteOptionsMenu extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
             children: [
-              Icon(icon, color: iconColor),
+              Icon(icon, color: widget.iconColor),
               const SizedBox(width: 8),
-              Text(text, style: TextStyle(color: iconColor)),
+              Text(text, style: TextStyle(color: widget.iconColor)),
             ],
           ),
         ),
@@ -98,22 +110,22 @@ class NoteOptionsMenu extends StatelessWidget {
   void _handleSelection(String value) {
     switch (value) {
       case 'color':
-        onColorSelect();
+        widget.onColorSelect();
         break;
       case 'text_color':
-        onTextColorSelect();
+        widget.onTextColorSelect();
         break;
       case 'font_size':
-        onFontSizeSelect();
+        widget.onFontSizeSelect();
         break;
       case 'tags':
-        onTagsSelect();
+        widget.onTagsSelect();
         break;
       case 'images':
-        onImagesSelect();
+        widget.onImagesSelect();
         break;
       case 'delete':
-        onDeleteSelect();
+        widget.onDeleteSelect();
         break;
     }
   }
