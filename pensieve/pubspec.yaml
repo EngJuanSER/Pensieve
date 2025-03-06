@@ -46,6 +46,7 @@ dependencies:
   photo_view: ^0.15.0
   shared_preferences: ^2.5.2
   provider: ^6.1.2
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:

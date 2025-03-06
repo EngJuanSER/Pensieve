@@ -59,31 +59,47 @@ class _NoteContentState extends State<NoteContent> {
     super.dispose();
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: textController,
-      focusNode: _focusNode,
-      decoration: InputDecoration(
-        border: InputBorder.none,
-        hintText: 'Escribe algo...',
-        hintStyle: TextStyle(color: widget.textColor),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        inputDecorationTheme: const InputDecorationTheme(
+          fillColor: Colors.transparent,
+          filled: false,
+        ),
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: widget.textColor,
+          selectionColor: widget.textColor.withOpacity(0.3),
+          selectionHandleColor: widget.textColor,
+        ),
       ),
-      onChanged: (text) {
-        if (text != lastContent) {
-          lastContent = text;
-          if (saveTimer?.isActive ?? false) {
-            saveTimer?.cancel();
+      child: TextField(
+        controller: textController,
+        focusNode: _focusNode,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: 'Escribe algo...',
+          hintStyle: TextStyle(color: widget.textColor.withOpacity(0.5)),
+          fillColor: Colors.transparent,
+          filled: false,
+        ),
+        onChanged: (text) {
+          if (text != lastContent) {
+            lastContent = text;
+            if (saveTimer?.isActive ?? false) {
+              saveTimer?.cancel();
+            }
+            saveTimer = Timer(const Duration(milliseconds: 500), () {
+              widget.onContentChanged(text);
+            });
           }
-          saveTimer = Timer(const Duration(milliseconds: 500), () {
-            widget.onContentChanged(text);
-          });
-        }
-      },
-      maxLines: null,
-      style: TextStyle(
-        fontSize: widget.fontSize,
-        color: widget.textColor,
+        },
+        maxLines: null,
+        style: TextStyle(
+          fontSize: widget.fontSize,
+          color: widget.textColor,
+          backgroundColor: Colors.transparent,
+        ),
       ),
     );
   }

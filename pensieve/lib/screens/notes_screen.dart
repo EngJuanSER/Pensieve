@@ -7,6 +7,7 @@ import '../components/note_list.dart';
 import '../components/filter_bar.dart';
 import '../components/note_header.dart';
 import '../components/note_list_header.dart';
+import '../components/theme_toggle_button.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
 
@@ -341,6 +342,7 @@ class NotesScreenState extends State<NotesScreen> {
           appBar: AppBar(
             title: const Text('Notas'),
             actions: [
+              const ThemeToggleButton(),
               IconButton(
                 icon: const Icon(Icons.info_outline),
                 onPressed: () => _showStats(context),

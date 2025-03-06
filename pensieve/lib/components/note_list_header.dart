@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'note_options_menu.dart';
+import 'package:intl/intl.dart';
 
 class NoteListHeader extends StatefulWidget {
   final DateTime createdAt;
@@ -40,43 +41,107 @@ class NoteListHeaderState extends State<NoteListHeader> {
     _menuKey.currentState?.showOptionsMenu();
   }
 
-  @override
+  String _formatDate(DateTime date) {
+    return DateFormat('dd/MM/yy').format(date);
+  }
+
+@override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12.0, 4.0, 4.0, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            widget.createdAt.toString().split('.')[0],
-            style: TextStyle(
-              fontSize: 12,
-              color: widget.textColor.withOpacity(0.6),
-            ),
-          ),
-          Row(
-            children: [
-              IconButton(
-                icon: Icon(
-                  widget.isFavorite ? Icons.star : Icons.star_border,
-                  color: widget.textColor,
+      padding: const EdgeInsets.fromLTRB(8.0, 4.0, 4.0, 0),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final availableWidth = constraints.maxWidth;
+          
+          if (availableWidth < 80) {
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    widget.isFavorite ? Icons.star : Icons.star_border,
+                    color: widget.textColor,
+                  ),
+                  onPressed: widget.onFavoriteToggle,
+                  iconSize: 16,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                  ),
                 ),
-                onPressed: widget.onFavoriteToggle,
+                NoteOptionsMenu(
+                  key: _menuKey,
+                  iconColor: widget.textColor,
+                  backgroundColor: widget.backgroundColor,
+                  onColorSelect: widget.onColorSelect,
+                  onTextColorSelect: widget.onTextColorSelect,
+                  onFontSizeSelect: widget.onFontSizeSelect,
+                  onTagsSelect: widget.onTagsSelect,
+                  onImagesSelect: widget.onImagesSelect,
+                  onDeleteSelect: widget.onDeleteSelect,
+                  iconSize: 16,
+                  buttonConstraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                  ),
+                ),
+              ],
+            );
+          }
+          
+          final buttonsWidth = availableWidth > 120 ? 76.0 : 60.0;
+          final dateWidth = availableWidth - buttonsWidth - 8;
+          
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SizedBox(
+                width: dateWidth.clamp(0.0, double.infinity),
+                child: Text(
+                  _formatDate(widget.createdAt),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: widget.textColor.withOpacity(0.6),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              NoteOptionsMenu(
-                key: _menuKey,
-                iconColor: widget.textColor,
-                backgroundColor: widget.backgroundColor,
-                onColorSelect: widget.onColorSelect,
-                onTextColorSelect: widget.onTextColorSelect,
-                onFontSizeSelect: widget.onFontSizeSelect,
-                onTagsSelect: widget.onTagsSelect,
-                onImagesSelect: widget.onImagesSelect,
-                onDeleteSelect: widget.onDeleteSelect,
+              SizedBox(
+                width: buttonsWidth,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        widget.isFavorite ? Icons.star : Icons.star_border,
+                        color: widget.textColor,
+                      ),
+                      onPressed: widget.onFavoriteToggle,
+                      iconSize: 16,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                    ),
+                    NoteOptionsMenu(
+                      key: _menuKey,
+                      iconColor: widget.textColor,
+                      backgroundColor: widget.backgroundColor,
+                      onColorSelect: widget.onColorSelect,
+                      onTextColorSelect: widget.onTextColorSelect,
+                      onFontSizeSelect: widget.onFontSizeSelect,
+                      onTagsSelect: widget.onTagsSelect,
+                      onImagesSelect: widget.onImagesSelect,
+                      onDeleteSelect: widget.onDeleteSelect,
+                    ),
+                  ],
+                ),
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../components/theme_toggle_button.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -13,6 +14,9 @@ class DashboardScreen extends StatelessWidget {
           style: TextStyle(color: Color.fromARGB(255, 71, 51, 90)),
         ),
         backgroundColor: const Color.fromARGB(255, 177, 147, 204),
+        actions: const [
+          ThemeToggleButton(),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -39,7 +43,6 @@ class DashboardScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            // Aquí irían las notas más recientes
             const SizedBox(height: 16),
             const Text(
               'Documentos más recientes:',
@@ -48,7 +51,6 @@ class DashboardScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            // Aquí irían los documentos más recientes
           ],
         ),
       ),

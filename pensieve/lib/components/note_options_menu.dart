@@ -9,6 +9,8 @@ class NoteOptionsMenu extends StatefulWidget {
   final Function() onTagsSelect;
   final Function() onImagesSelect;
   final Function() onDeleteSelect;
+  final double iconSize;
+  final BoxConstraints buttonConstraints;
 
   const NoteOptionsMenu({
     super.key,
@@ -20,6 +22,8 @@ class NoteOptionsMenu extends StatefulWidget {
     required this.onTagsSelect,
     required this.onImagesSelect,
     required this.onDeleteSelect,
+    this.iconSize = 24.0,
+    this.buttonConstraints = const BoxConstraints(),
   });
 
   @override
@@ -47,7 +51,12 @@ class NoteOptionsMenuState extends State<NoteOptionsMenu> {
       ),
       child: PopupMenuButton<String>(
         key: _popupKey,
-        icon: Icon(Icons.more_vert, color: widget.iconColor),
+        icon: Icon(Icons.more_vert, 
+          color: widget.iconColor, 
+          size: widget.iconSize,
+        ),
+        padding: EdgeInsets.zero,
+        constraints: widget.buttonConstraints,
         offset: const Offset(0, 40),
         elevation: 0,
         itemBuilder: (context) => [
@@ -55,6 +64,10 @@ class NoteOptionsMenuState extends State<NoteOptionsMenu> {
             padding: EdgeInsets.zero,
             child: StatefulBuilder(
               builder: (context, setState) => Container(
+                constraints: const BoxConstraints(
+                  maxWidth: 250,
+                  minWidth: 150,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12.0),
                   image: DecorationImage(
@@ -96,10 +109,11 @@ class NoteOptionsMenuState extends State<NoteOptionsMenu> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: widget.iconColor),
-              const SizedBox(width: 8),
-              Text(text, style: TextStyle(color: widget.iconColor)),
+              Icon(icon, color: widget.iconColor, size: 18),
+              const SizedBox(width: 6),
+              Text(text, style: TextStyle(color: widget.iconColor, fontSize: 14)),
             ],
           ),
         ),

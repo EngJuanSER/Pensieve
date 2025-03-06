@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../components/theme_toggle_button.dart';
 
 class DocumentLibraryScreen extends StatelessWidget {
   const DocumentLibraryScreen({super.key});
@@ -10,10 +11,11 @@ class DocumentLibraryScreen extends StatelessWidget {
         title: const Text('Documentos'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          const ThemeToggleButton(),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
-              // TODO: Implementar la lógica para agregar un nuevo documento
+              // Lógica para agregar documento
             },
           ),
         ],

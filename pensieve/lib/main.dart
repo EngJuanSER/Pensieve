@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'components/theme_provider.dart';
 import 'models/note_adapter.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/task_manager_screen.dart';
@@ -10,7 +12,13 @@ import 'screens/notes_screen.dart';
 void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(NoteAdapter());
-  runApp(const MyApp());
+  
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -18,13 +26,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Pensieve Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.purple,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(234, 219, 176, 255)),
-      ),
-      home: MainScreen(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'Pensieve',
+          theme: themeProvider.theme,
+          home: const MainScreen(),  
+        );
+      },
     );
   }
 }

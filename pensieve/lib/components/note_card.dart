@@ -65,56 +65,59 @@ class NoteCardState extends State<NoteCard> {
       child: Card(
         elevation: 0,
         color: Colors.transparent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            NoteHeader(
-              key: widget.headerKey,
-              createdAt: widget.note.createdAt,
-              isFavorite: widget.note.isFavorite,
-              textColor: Color(widget.note.textColor),
-              backgroundColor: Color(widget.note.backgroundColor),
-              onFavoriteToggle: () => widget.toggleFavorite(widget.note.id),
-              onColorSelect: () => _showColorPicker(context),
-              onTextColorSelect: () => _showTextColorPicker(context),
-              onFontSizeSelect: () => _showFontSizeDialog(context),
-              onTagsSelect: () => _showTagManager(context),
-              onImagesSelect: () => _showImageGallery(context),
-              onDeleteSelect: () => widget.showDeleteConfirmationDialog(context, widget.note.id),
-            ),
+        child: ClipRRect(
+        borderRadius: BorderRadius.circular(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              NoteHeader(
+                key: widget.headerKey,
+                createdAt: widget.note.createdAt,
+                isFavorite: widget.note.isFavorite,
+                textColor: Color(widget.note.textColor),
+                backgroundColor: Color(widget.note.backgroundColor),
+                onFavoriteToggle: () => widget.toggleFavorite(widget.note.id),
+                onColorSelect: () => _showColorPicker(context),
+                onTextColorSelect: () => _showTextColorPicker(context),
+                onFontSizeSelect: () => _showFontSizeDialog(context),
+                onTagsSelect: () => _showTagManager(context),
+                onImagesSelect: () => _showImageGallery(context),
+                onDeleteSelect: () => widget.showDeleteConfirmationDialog(context, widget.note.id),
+              ),
 
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      NoteContent(
-                        content: widget.note.content,
-                        textColor: Color(widget.note.textColor),
-                        fontSize: widget.note.fontSize,
-                        onContentChanged: (text) => 
-                          widget.updateNote(widget.note.id, text),
-                        onFocusChanged: widget.onFocusChanged,
-
-                      ),
-
-                      if (widget.note.tags.isNotEmpty)
-                        TagList(
-                          tags: widget.note.tags,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        NoteContent(
+                          content: widget.note.content,
                           textColor: Color(widget.note.textColor),
-                          backgroundColor: Color(widget.note.backgroundColor),
+                          fontSize: widget.note.fontSize,
+                          onContentChanged: (text) => 
+                            widget.updateNote(widget.note.id, text),
+                          onFocusChanged: widget.onFocusChanged,
+
                         ),
-                      
-                      if (widget.note.imageUrls.isNotEmpty)
-                        ImagePreview(imageUrls: widget.note.imageUrls),
-                    ],
+
+                        if (widget.note.tags.isNotEmpty)
+                          TagList(
+                            tags: widget.note.tags,
+                            textColor: Color(widget.note.textColor),
+                            backgroundColor: Color(widget.note.backgroundColor),
+                          ),
+                        
+                        if (widget.note.imageUrls.isNotEmpty)
+                          ImagePreview(imageUrls: widget.note.imageUrls),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
