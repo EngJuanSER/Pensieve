@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'components/theme_provider.dart';
 import 'models/note_adapter.dart';
+import 'models/document_adapter.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/task_manager_screen.dart';
 import 'screens/document_library_screen.dart';
@@ -12,6 +13,7 @@ import 'screens/notes_screen.dart';
 void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(NoteAdapter());
+  Hive.registerAdapter(DocumentAdapter());
   
   runApp(
     ChangeNotifierProvider(
