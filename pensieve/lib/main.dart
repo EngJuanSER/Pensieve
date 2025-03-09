@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'components/theme_provider.dart';
 import 'models/note_adapter.dart';
 import 'models/document_adapter.dart';
+import 'models/task_adapter.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/task_manager_screen.dart';
 import 'screens/document_library_screen.dart';
@@ -21,11 +22,13 @@ void main() async {
   } catch (e) {
     debugPrint('❌ Error al cargar el archivo .env: $e');
   }
-  
+
   await Hive.initFlutter();
+
   Hive.registerAdapter(NoteAdapter());
   Hive.registerAdapter(DocumentAdapter());
-  
+  Hive.registerAdapter(TaskAdapter());
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(),

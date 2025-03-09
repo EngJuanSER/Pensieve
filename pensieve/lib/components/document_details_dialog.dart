@@ -4,6 +4,7 @@ import 'dart:io';
 import '../models/document.dart';
 import '../utils/file_utils.dart';
 import 'tag_manager.dart';
+import 'image_viewer.dart';
 
 class DocumentDetailsDialog extends StatefulWidget {
   final Document document;
@@ -149,27 +150,60 @@ class _DocumentDetailsDialogState extends State<DocumentDetailsDialog> {
     );
   }
 
-  Widget _buildPreview() {
-    final extension = widget.document.fileType.toLowerCase();
+Widget _buildPreview() {
+  final extension = widget.document.fileType.toLowerCase();
+  final isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension);
 
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
-      return Image.file(
-        File(widget.document.path),
+  if (isImage) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ImageViewer(imageUrl: widget.document.path),
+          ),
+        );
+      },
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Image.file(
+            File(widget.document.path),
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildFallbackPreview();
+            },
+          ),
+          
+          Positioned(
+            bottom: 8,
+            right: 8,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.zoom_in,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  } else {
+    return widget.document.thumbnailPath != null ? 
+      Image.file(
+        File(widget.document.thumbnailPath!),
         fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildFallbackPreview();
-        },
-      );
-    } else {
-      return widget.document.thumbnailPath != null ? 
-        Image.file(
-          File(widget.document.thumbnailPath!),
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => _buildFallbackPreview(),
-        ) : 
-        _buildFallbackPreview();
-    }
+        errorBuilder: (_, __, ___) => _buildFallbackPreview(),
+      ) : 
+      _buildFallbackPreview();
   }
+}
 
   Widget _buildFallbackPreview() {
     final IconData iconData = FileUtils.getIconForFileType(widget.document.fileType);
@@ -383,30 +417,26 @@ class _DocumentDetailsDialogState extends State<DocumentDetailsDialog> {
     );
   }
   
-  void _showDeleteConfirmation(BuildContext parentContext) {
-    final VoidCallback deleteFunction = widget.onDelete;
-    
+  void _showDeleteConfirmation(BuildContext context) {
     showDialog(
-      context: parentContext,
-      builder: (confirmDialogContext) => AlertDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Eliminar documento'),
         content: const Text('¿Estás seguro de que quieres eliminar este documento? Esta acción no elimina el archivo original.'),
         actions: [
           TextButton(
             child: const Text('Cancelar'),
-            onPressed: () => Navigator.of(confirmDialogContext).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Eliminar'),
             onPressed: () {
-              Navigator.of(confirmDialogContext).pop();
+              Navigator.of(dialogContext).pop();
               
-              Navigator.of(parentContext).pop();
+              Navigator.of(context).pop();
               
-              Future.delayed(const Duration(milliseconds: 100), () {
-                deleteFunction(); 
-              });
+              widget.onDelete();
             },
           ),
         ],

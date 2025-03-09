@@ -13,7 +13,8 @@ class DocumentLibraryController extends ChangeNotifier {
   Box<Document>? _documentsBox;
   bool _isInitialized = false;
   
-  // Estadísticas
+  final Map<String, bool> _processingDocuments = {};
+  
   Map<String, int> tagStats = {};
   Map<String, int> typeStats = {};
   int totalDocuments = 0;
@@ -21,6 +22,7 @@ class DocumentLibraryController extends ChangeNotifier {
   DateTime? lastAdded;
   DateTime? lastAccessed;
   
+  // Filtros
   List<String> selectedTags = [];
   List<String> selectedTypes = [];
   bool showOnlyFavorites = false;
@@ -46,6 +48,9 @@ class DocumentLibraryController extends ChangeNotifier {
   
   Future<void> _openBox() async {
     try {
+
+/*       await Hive.deleteBoxFromDisk('documents');
+ */
       _documentsBox = await Hive.openBox<Document>('documents');
       documents = _documentsBox!.values.toList();
       updateStats();
@@ -53,8 +58,21 @@ class DocumentLibraryController extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error al abrir Hive Box: $e');
-      documents = [];
-      _isInitialized = true;
+      
+      try {
+        await Hive.deleteBoxFromDisk('documents');
+        debugPrint('Caja eliminada tras error. Recreando...');
+        _documentsBox = await Hive.openBox<Document>('documents');
+        documents = [];
+        updateStats();
+        _isInitialized = true;
+        notifyListeners();
+      } catch (e2) {
+        debugPrint('Error fatal con Hive: $e2');
+        documents = [];
+        _isInitialized = true;
+        notifyListeners();
+      }
     }
   }
   
@@ -81,7 +99,6 @@ class DocumentLibraryController extends ChangeNotifier {
                       : maxDate
                 );
     
-    // Estadísticas de etiquetas
     tagStats = {};
     for (var doc in allDocs) {
       for (var tag in doc.tags) {
@@ -89,7 +106,6 @@ class DocumentLibraryController extends ChangeNotifier {
       }
     }
     
-    // Estadísticas de tipos de archivo
     typeStats = {};
     for (var doc in allDocs) {
       final type = doc.fileType.toLowerCase();
@@ -97,7 +113,6 @@ class DocumentLibraryController extends ChangeNotifier {
     }
   }
   
-  /// Obtiene documentos filtrados y ordenados según los criterios actuales
   List<Document> getFilteredAndSortedDocuments(String searchText) {
     return documents.where((doc) {
       bool matchesSearch = true;
@@ -157,7 +172,6 @@ class DocumentLibraryController extends ChangeNotifier {
       });
   }
   
-  /// Agrega un nuevo documento a la biblioteca
   Future<bool> addDocument() async {
     if (!_isInitialized) await loadDocuments();
     if (_documentsBox == null) return false;
@@ -175,21 +189,25 @@ class DocumentLibraryController extends ChangeNotifier {
 
         String? thumbnailPath = await FileUtils.generateThumbnail(file.path);
         
+        final documentId = DateTime.now().millisecondsSinceEpoch.toString();
+        
         final document = Document(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          id: documentId,
           name: fileName,
           path: file.path,
           addedAt: DateTime.now(),
           fileType: fileType,
           fileSize: fileSize,
           thumbnailPath: thumbnailPath,
-          tags: [], // Inicializar con lista vacía explícitamente
+          tags: [], 
           isFavorite: false,
         );
         
         await _documentsBox!.put(document.id, document);
         await loadDocuments();
-        await generateDocumentDescription(document.id);
+        
+        Future.microtask(() => generateDocumentDescription(documentId));
+        
         return true;
       }
       return false;
@@ -201,7 +219,6 @@ class DocumentLibraryController extends ChangeNotifier {
     }
   }
   
-  /// Procesa un archivo arrastrado a la aplicación
   Future<bool> processDroppedFile(String filePath) async {
     if (!_isInitialized) await loadDocuments();
     if (_documentsBox == null) return false;
@@ -218,21 +235,24 @@ class DocumentLibraryController extends ChangeNotifier {
 
       String? thumbnailPath = await FileUtils.generateThumbnail(file.path);
       
+      final documentId = DateTime.now().millisecondsSinceEpoch.toString();
+      
       final document = Document(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: documentId,
         name: fileName,
         path: file.path,
         addedAt: DateTime.now(),
         fileType: fileType,
         fileSize: fileSize,
         thumbnailPath: thumbnailPath,
-        tags: [], // Inicializar con lista vacía explícitamente
+        tags: [], 
         isFavorite: false,
       );
       
       await _documentsBox!.put(document.id, document);
       await loadDocuments();
-      await generateDocumentDescription(document.id);
+      
+      Future.microtask(() => generateDocumentDescription(documentId));
       
       return true;
     } catch (e) {
@@ -241,81 +261,75 @@ class DocumentLibraryController extends ChangeNotifier {
     }
   }
   
-  /// Genera descripción y etiquetas para un documento usando IA
   Future<void> generateDocumentDescription(String documentId) async {
     if (!_isInitialized) await loadDocuments();
     if (_documentsBox == null) return;
     
+    if (_processingDocuments[documentId] == true) {
+      debugPrint('Documento $documentId ya está siendo procesado');
+      return;
+    }
+    
+    _processingDocuments[documentId] = true;
+    
     try {
       final docIndex = documents.indexWhere((doc) => doc.id == documentId);
-      if (docIndex == -1) return;
+      if (docIndex == -1) {
+        _processingDocuments.remove(documentId);
+        return;
+      }
       
       final doc = documents[docIndex];
+      
+      if (doc.description != null && 
+          doc.description!.isNotEmpty && 
+          doc.description!.length > 30 &&
+          doc.tags.isNotEmpty) {
+        debugPrint('Documento ya tiene descripción completa y etiquetas');
+        _processingDocuments.remove(documentId);
+        return;
+      }
+      
       String description = "Documento ${doc.fileType.toUpperCase()} agregado el ${doc.addedAt.day}/${doc.addedAt.month}/${doc.addedAt.year}";
       
       final file = File(doc.path);
       if (!await file.exists()) {
         doc.description = description;
         await _documentsBox!.put(doc.id, doc);
+        _processingDocuments.remove(documentId);
         return;
       }
       
       final aiService = AIService();
       
-      // Usar el método directo desde archivo para aprovechar las capacidades multimodales
       final aiDescription = await aiService.generateDocumentDescriptionFromFile(file);
-      
       if (aiDescription != null && aiDescription.isNotEmpty) {
         description = aiDescription;
-        
-        // Generar etiquetas basadas en el archivo completo
+      }
+      
+      if (doc.tags.isEmpty) {
         final suggestedTags = await aiService.generateDocumentTagsFromFile(file);
-        
         if (suggestedTags != null && suggestedTags.isNotEmpty) {
           doc.tags = suggestedTags;
-        }
-      } else {
-        // Método de respaldo: extraer texto para archivos de texto
-        final fileExtension = doc.fileType.toLowerCase();
-        if (['txt', 'md', 'json', 'csv', 'xml', 'html', 'css', 'js', 'dart'].contains(fileExtension)) {
-          final extractedText = await FileUtils.extractTextFromFile(doc.path, doc.fileType);
-          
-          if (extractedText != null && extractedText.isNotEmpty) {
-            final textBasedDescription = await aiService.generateDocumentDescription(
-              fileName: doc.name,
-              fileType: doc.fileType,
-              fileContent: extractedText,
-            );
-            
-            if (textBasedDescription != null && textBasedDescription.isNotEmpty) {
-              description = textBasedDescription;
-              
-              // Si no pudimos generar etiquetas del archivo completo, intentamos con texto
-              if (doc.tags.isEmpty) {
-                final textBasedTags = await aiService.generateDocumentTags(
-                  fileName: doc.name,
-                  fileType: doc.fileType,
-                  fileContent: extractedText,
-                );
-                
-                if (textBasedTags != null && textBasedTags.isNotEmpty) {
-                  doc.tags = textBasedTags;
-                }
-              }
-            }
-          }
+        } else {
+          doc.tags = [
+            aiService.normalizeTag(doc.fileType.toUpperCase()), 
+            'Documento'
+          ];
         }
       }
       
       doc.description = description;
       await _documentsBox!.put(doc.id, doc);
-      await loadDocuments();
+      await loadDocuments(); 
+      
     } catch (e) {
       debugPrint('Error al generar descripción: $e');
+    } finally {
+      _processingDocuments.remove(documentId);
     }
   }
   
-  /// Registra la visualización de un documento
   Future<void> viewDocument(Document document) async {
     if (!_isInitialized) await loadDocuments();
     if (_documentsBox == null) return;
@@ -325,7 +339,6 @@ class DocumentLibraryController extends ChangeNotifier {
     updateStats();
   }
   
-  /// Cambia el estado de favorito de un documento
   Future<void> toggleFavorite(String id) async {
     if (!_isInitialized) await loadDocuments();
     if (_documentsBox == null) return;
@@ -339,7 +352,6 @@ class DocumentLibraryController extends ChangeNotifier {
     }
   }
   
-  /// Actualiza las etiquetas de un documento
   Future<void> updateTags(String id, List<String> newTags) async {
     if (!_isInitialized) await loadDocuments();
     if (_documentsBox == null) return;
@@ -347,13 +359,12 @@ class DocumentLibraryController extends ChangeNotifier {
     final docIndex = documents.indexWhere((doc) => doc.id == id);
     if (docIndex != -1) {
       final doc = documents[docIndex];
-      doc.tags = newTags;
+      final aiService = AIService();
+      doc.tags = aiService.normalizeTagList(newTags);
       await _documentsBox!.put(id, doc);
       await loadDocuments();
     }
   }
-  
-  /// Actualiza la descripción de un documento
   Future<void> updateDescription(String id, String description) async {
     if (!_isInitialized) await loadDocuments();
     if (_documentsBox == null) return;
@@ -367,7 +378,6 @@ class DocumentLibraryController extends ChangeNotifier {
     }
   }
   
-  /// Elimina un documento de la biblioteca
   Future<bool> deleteDocument(String id) async {
     if (!_isInitialized) await loadDocuments();
     if (_documentsBox == null) return false;
@@ -385,19 +395,16 @@ class DocumentLibraryController extends ChangeNotifier {
     }
   }
 
-  /// Obtiene todas las etiquetas únicas disponibles
   List<String> getAvailableTags() {
     return documents.fold<Set<String>>(
       {}, (set, doc) => set..addAll(doc.tags)
     ).toList();
   }
   
-  /// Obtiene todos los tipos de archivo únicos disponibles
   List<String> getAvailableTypes() {
     return documents.map((doc) => doc.fileType.toLowerCase()).toSet().toList();
   }
   
-  /// Actualiza los criterios de filtrado
   void updateFilter({
     List<String>? tags,
     List<String>? types,
@@ -418,10 +425,9 @@ class DocumentLibraryController extends ChangeNotifier {
     notifyListeners();
   }
   
-  /// Limpia recursos al destruir el controlador
   @override
   void dispose() {
-    // No cerramos _documentsBox aquí ya que es compartido entre múltiples instancias
+    _processingDocuments.clear();
     super.dispose();
   }
 }

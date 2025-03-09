@@ -127,7 +127,6 @@ class FileUtils {
       
       final extension = fileType.toLowerCase();
       
-      // Lista ampliada de formatos de texto soportados
       List<String> textFormats = [
         'txt', 'md', 'json', 'csv', 'xml', 'html', 'htm', 
         'css', 'js', 'dart', 'py', 'java', 'c', 'cpp', 'cs',

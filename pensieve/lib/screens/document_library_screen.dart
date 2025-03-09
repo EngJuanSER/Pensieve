@@ -125,7 +125,7 @@ class DocumentLibraryScreenState extends State<DocumentLibraryScreen> {
           const SnackBar(content: Text('Error al procesar el archivo')),
         );
       }
-      setState(() {}); // Actualizar la UI
+      setState(() {}); 
     }
   }
 
@@ -146,8 +146,7 @@ class DocumentLibraryScreenState extends State<DocumentLibraryScreen> {
             _updateTags(document.id, tags);
           },
           onDelete: () {
-            Navigator.of(context).pop();
-            _confirmDeleteDocument(context, document.id);
+            _deleteDocument(document.id);
           },
           onUpdateDescription: (description) => _updateDescription(document.id, description),
         ),
@@ -168,30 +167,6 @@ class DocumentLibraryScreenState extends State<DocumentLibraryScreen> {
   Future<void> _updateDescription(String id, String description) async {
     await _controller.updateDescription(id, description);
     if (mounted) setState(() {});
-  }
-
-  void _confirmDeleteDocument(BuildContext context, String id) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Eliminar documento'),
-        content: const Text('¿Estás seguro de que quieres eliminar este documento? Esta acción no elimina el archivo original.'),
-        actions: [
-          TextButton(
-            child: const Text('Cancelar'),
-            onPressed: () => Navigator.of(dialogContext).pop(),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              _deleteDocument(id);
-            },
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _deleteDocument(String id) async {

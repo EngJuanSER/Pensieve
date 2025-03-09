@@ -3,67 +3,65 @@ import 'document.dart';
 
 class DocumentAdapter extends TypeAdapter<Document> {
   @override
-  final int typeId = 2; 
+  final typeId = 2;
 
   @override
   Document read(BinaryReader reader) {
-    final id = reader.readString();
-    final name = reader.readString();
-    final path = reader.readString();
-    final addedAt = DateTime.fromMillisecondsSinceEpoch(reader.readInt());
-    final hasLastAccessed = reader.readBool();
-    final lastAccessed = hasLastAccessed 
-        ? DateTime.fromMillisecondsSinceEpoch(reader.readInt())
-        : null;
-    final fileType = reader.readString();
-    final fileSize = reader.readInt();
-    final tagCount = reader.readInt();
-    final tags = List<String>.generate(tagCount, (_) => reader.readString());
-    final hasDescription = reader.readBool();
-    final description = hasDescription ? reader.readString() : null;
-    final hasThumbnail = reader.readBool();
-    final thumbnailPath = hasThumbnail ? reader.readString() : null;
-    final isFavorite = reader.readBool();
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
     
     return Document(
-      id: id,
-      name: name,
-      path: path,
-      addedAt: addedAt,
-      lastAccessed: lastAccessed,
-      fileType: fileType,
-      fileSize: fileSize,
-      tags: tags,
-      description: description,
-      thumbnailPath: thumbnailPath,
-      isFavorite: isFavorite,
+      id: fields[0] as String,
+      name: fields[1] as String,
+      path: fields[2] as String,
+      addedAt: fields[3] as DateTime,
+      lastAccessed: fields[4] as DateTime?,
+      fileType: fields[5] as String,
+      fileSize: fields[6] as int,
+      tags: fields[7] == null ? [] : List<String>.from(fields[7] as List),
+      description: fields[8] as String?,
+      thumbnailPath: fields[9] as String?,
+      isFavorite: fields[10] == null ? false : fields[10] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Document obj) {
-    writer.writeString(obj.id);
-    writer.writeString(obj.name);
-    writer.writeString(obj.path);
-    writer.writeInt(obj.addedAt.millisecondsSinceEpoch);
-    writer.writeBool(obj.lastAccessed != null);
-    if (obj.lastAccessed != null) {
-      writer.writeInt(obj.lastAccessed!.millisecondsSinceEpoch);
-    }
-    writer.writeString(obj.fileType);
-    writer.writeInt(obj.fileSize);
-    writer.writeInt(obj.tags.length);
-    for (var tag in obj.tags) {
-      writer.writeString(tag);
-    }
-    writer.writeBool(obj.description != null);
-    if (obj.description != null) {
-      writer.writeString(obj.description!);
-    }
-    writer.writeBool(obj.thumbnailPath != null);
-    if (obj.thumbnailPath != null) {
-      writer.writeString(obj.thumbnailPath!);
-    }
-    writer.writeBool(obj.isFavorite);
+    writer
+      ..writeByte(11)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.path)
+      ..writeByte(3)
+      ..write(obj.addedAt)
+      ..writeByte(4)
+      ..write(obj.lastAccessed)
+      ..writeByte(5)
+      ..write(obj.fileType)
+      ..writeByte(6)
+      ..write(obj.fileSize)
+      ..writeByte(7)
+      ..write(obj.tags)
+      ..writeByte(8)
+      ..write(obj.description)
+      ..writeByte(9)
+      ..write(obj.thumbnailPath)
+      ..writeByte(10)
+      ..write(obj.isFavorite);
   }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DocumentAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
 }
