@@ -127,7 +127,15 @@ class FileUtils {
       
       final extension = fileType.toLowerCase();
       
-      if (['txt', 'md', 'json', 'csv', 'xml', 'html', 'css', 'js'].contains(extension)) {
+      // Lista ampliada de formatos de texto soportados
+      List<String> textFormats = [
+        'txt', 'md', 'json', 'csv', 'xml', 'html', 'htm', 
+        'css', 'js', 'dart', 'py', 'java', 'c', 'cpp', 'cs',
+        'sh', 'bat', 'ps1', 'yaml', 'yml', 'toml', 'ini', 'cfg',
+        'log', 'sql', 'r', 'rb', 'pl', 'php', 'ts'
+      ];
+      
+      if (textFormats.contains(extension)) {
         return await file.readAsString();
       }
       

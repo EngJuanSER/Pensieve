@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'components/theme_provider.dart';
 import 'models/note_adapter.dart';
 import 'models/document_adapter.dart';
@@ -9,8 +10,18 @@ import 'screens/task_manager_screen.dart';
 import 'screens/document_library_screen.dart';
 import 'screens/notes_screen.dart';
 
-
 void main() async {
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+
+  try {
+    await dotenv.load(fileName: ".env");
+    debugPrint('✅ Archivo .env cargado correctamente');
+  } catch (e) {
+    debugPrint('❌ Error al cargar el archivo .env: $e');
+  }
+  
   await Hive.initFlutter();
   Hive.registerAdapter(NoteAdapter());
   Hive.registerAdapter(DocumentAdapter());

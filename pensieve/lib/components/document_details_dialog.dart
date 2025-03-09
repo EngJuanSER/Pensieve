@@ -14,14 +14,14 @@ class DocumentDetailsDialog extends StatefulWidget {
   final Function(String) onUpdateDescription;
 
   const DocumentDetailsDialog({
-    Key? key,
+    super.key,
     required this.document,
     required this.onOpen,
     required this.onToggleFavorite,
     required this.onUpdateTags,
     required this.onDelete,
     required this.onUpdateDescription,
-  }) : super(key: key);
+  });
 
   @override
   State<DocumentDetailsDialog> createState() => _DocumentDetailsDialogState();
@@ -47,6 +47,7 @@ class _DocumentDetailsDialogState extends State<DocumentDetailsDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: Theme.of(context).dialogBackgroundColor, // Asegurar color de fondo adecuado
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.8,
@@ -306,6 +307,12 @@ class _DocumentDetailsDialogState extends State<DocumentDetailsDialog> {
   }
 
   Widget _buildTagsSection() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    final Color chipBackground = isDarkMode ? Colors.blueGrey.shade700 : Colors.blueGrey.shade100;
+    
+    final Color chipTextColor = isDarkMode ? Colors.white : Colors.black87;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -336,8 +343,11 @@ class _DocumentDetailsDialogState extends State<DocumentDetailsDialog> {
               spacing: 8,
               runSpacing: 8,
               children: widget.document.tags.map((tag) => Chip(
-                label: Text(tag),
-                backgroundColor: Colors.blueGrey.shade100,
+                label: Text(
+                  tag,
+                  style: TextStyle(color: chipTextColor),
+                ),
+                backgroundColor: chipBackground,
               )).toList(),
             ),
       ],
@@ -357,10 +367,7 @@ class _DocumentDetailsDialogState extends State<DocumentDetailsDialog> {
               foregroundColor: Colors.red,
               side: const BorderSide(color: Colors.red),
             ),
-            onPressed: () {
-              Navigator.of(context).pop();
-              widget.onDelete();
-            },
+            onPressed: () => _showDeleteConfirmation(context),
           ),
           const SizedBox(width: 16),
           ElevatedButton.icon(
@@ -369,6 +376,37 @@ class _DocumentDetailsDialogState extends State<DocumentDetailsDialog> {
             onPressed: () {
               widget.onOpen();
               Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _showDeleteConfirmation(BuildContext parentContext) {
+    final VoidCallback deleteFunction = widget.onDelete;
+    
+    showDialog(
+      context: parentContext,
+      builder: (confirmDialogContext) => AlertDialog(
+        title: const Text('Eliminar documento'),
+        content: const Text('¿Estás seguro de que quieres eliminar este documento? Esta acción no elimina el archivo original.'),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.of(confirmDialogContext).pop(),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+            onPressed: () {
+              Navigator.of(confirmDialogContext).pop();
+              
+              Navigator.of(parentContext).pop();
+              
+              Future.delayed(const Duration(milliseconds: 100), () {
+                deleteFunction(); 
+              });
             },
           ),
         ],

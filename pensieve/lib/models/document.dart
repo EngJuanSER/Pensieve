@@ -8,8 +8,8 @@ class Document {
   int fileSize; 
   List<String> tags;
   String? description;
-  bool isFavorite;
   String? thumbnailPath;
+  bool isFavorite;
 
   Document({
     required this.id,
@@ -19,9 +19,11 @@ class Document {
     this.lastAccessed,
     required this.fileType,
     required this.fileSize,
-    List<String>? tags,
     this.description,
-    this.isFavorite = false,
     this.thumbnailPath,
-  }) : tags = tags ?? [];
+    List<String>? tags,
+    bool? isFavorite,
+  }) : 
+    tags = tags ?? [],
+    isFavorite = isFavorite ?? false;
 }
