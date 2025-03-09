@@ -11,6 +11,7 @@ import '../components/document_grid.dart';
 import '../components/document_list.dart';
 import '../components/document_grouped.dart';
 import '../components/document_details_dialog.dart';
+import '../components/ai_settings_dialog.dart';
 import '../utils/file_utils.dart';
 
 class DocumentLibraryScreen extends StatefulWidget {
@@ -243,6 +244,11 @@ class DocumentLibraryScreenState extends State<DocumentLibraryScreen> {
           appBar: AppBar(
             title: const Text('Biblioteca de Documentos'),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: 'Configuración de IA',
+                onPressed: _showAISettings,
+              ),
               const ThemeToggleButton(),
               IconButton(
                 icon: const Icon(Icons.info_outline),
@@ -367,6 +373,17 @@ class DocumentLibraryScreenState extends State<DocumentLibraryScreen> {
             child: const Icon(Icons.add),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showAISettings() {
+    showDialog(
+      context: context,
+      builder: (context) => AISettingsDialog(
+        onSettingsChanged: () {
+          setState(() {});
+        },
       ),
     );
   }

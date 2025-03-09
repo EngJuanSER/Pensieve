@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'ai/mime_utils.dart';
 import 'ai/text_extractor.dart';
 import 'ai/text_normalizer.dart';
@@ -9,17 +9,59 @@ import 'ai/description_generator.dart';
 import 'ai/tag_generator.dart';
 
 class AIService {
-  static String get _apiKey {
-    final envKey = dotenv.env['API-KEY'];
-    if (envKey != null && envKey.isNotEmpty) {
-      return envKey;
+  static const String _apiKeyStorage = 'gemini_api_key';
+  static final _storage = FlutterSecureStorage();
+  
+  static Future<String> get _apiKey async {
+    try {
+      final savedKey = await _storage.read(key: _apiKeyStorage);
+      if (savedKey != null && savedKey.isNotEmpty) {
+        return savedKey;
+      }
+      
+      final envKey = dotenv.env['API-KEY'];
+      if (envKey != null && envKey.isNotEmpty) {
+        await _storage.write(key: _apiKeyStorage, value: envKey);
+        return envKey;
+      }
+    } catch (e) {
+      debugPrint('Error al acceder al almacenamiento seguro: $e');
     }
     
-    debugPrint('⚠️ Advertencia: Usando clave API por defecto. No recomendado para producción.');
-    return 'API-KEY';
+    return ''; 
   }
   
-  bool get hasValidApiKey => _apiKey != 'API-KEY' && _apiKey.isNotEmpty;
+  static Future<bool> saveApiKey(String apiKey) async {
+    try {
+      await _storage.write(key: _apiKeyStorage, value: apiKey);
+      return true;
+    } catch (e) {
+      debugPrint('Error al guardar API Key: $e');
+      return false;
+    }
+  }
+  
+  static Future<bool> hasApiKey() async {
+    try {
+      final key = await _apiKey;
+      return key.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  static Future<String> getCurrentApiKey() async {
+    try {
+      return await _apiKey;
+    } catch (e) {
+      return '';
+    }
+  }
+  
+  Future<bool> get hasValidApiKey async {
+    final key = await _apiKey;
+    return key.isNotEmpty;
+  }
   
   bool isMimeTypeSupportedByGemini(String mimeType) {
     return MimeUtils.isMimeTypeSupportedByGemini(mimeType);
@@ -46,13 +88,14 @@ class AIService {
     required String fileType,
     required String fileContent,
   }) async {
-    if (!hasValidApiKey) {
+    final apiKeyValue = await _apiKey;
+    if (apiKeyValue.isEmpty) {
       debugPrint('⚠️ No se encontró una clave de API válida');
       return null;
     }
     
     return DescriptionGenerator.generateDescription(
-      apiKey: _apiKey,
+      apiKey: apiKeyValue,
       fileName: fileName,
       fileType: fileType,
       fileContent: fileContent,
@@ -60,13 +103,14 @@ class AIService {
   }
   
   Future<String?> generateDocumentDescriptionFromFile(File file) async {
-    if (!hasValidApiKey) {
+    final apiKeyValue = await _apiKey;
+    if (apiKeyValue.isEmpty) {
       debugPrint('⚠️ No se encontró una clave de API válida');
       return null;
     }
     
     return DescriptionGenerator.generateFromFile(
-      apiKey: _apiKey,
+      apiKey: apiKeyValue,
       file: file,
     );
   }
@@ -76,13 +120,14 @@ class AIService {
     required String fileType,
     required String fileContent,
   }) async {
-    if (!hasValidApiKey) {
+    final apiKeyValue = await _apiKey;
+    if (apiKeyValue.isEmpty) {
       debugPrint('⚠️ No se encontró una clave de API válida');
       return null;
     }
     
     return TagGenerator.generateTags(
-      apiKey: _apiKey,
+      apiKey: apiKeyValue,
       fileName: fileName,
       fileType: fileType,
       fileContent: fileContent,
@@ -90,13 +135,14 @@ class AIService {
   }
   
   Future<List<String>?> generateDocumentTagsFromFile(File file) async {
-    if (!hasValidApiKey) {
+    final apiKeyValue = await _apiKey;
+    if (apiKeyValue.isEmpty) {
       debugPrint('⚠️ No se encontró una clave de API válida');
       return null;
     }
     
     return TagGenerator.generateFromFile(
-      apiKey: _apiKey,
+      apiKey: apiKeyValue,
       file: file,
     );
   }
